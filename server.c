@@ -19,7 +19,7 @@
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
-void handle_client(int client_socket);
+void *handle_client(void *arg);
 int check(int exp, const char *msg);
 
 int main(int argc, char **argv)
@@ -43,7 +43,10 @@ int main(int argc, char **argv)
     check(client_socket = accept(server_socket, (SA *)&client_addr, (socklen_t *)&addr_size), "Accept failed");
     printf("Connected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-    handle_client(client_socket);
+    pthread_t thread;
+    int *pclient = malloc(sizeof(int));
+    *pclient = client_socket;
+    pthread_create(&thread, NULL, handle_client, (void *)&pclient);
   }
 
   return 0;
@@ -59,8 +62,10 @@ int check(int exp, const char *msg)
   return exp;
 }
 
-void handle_client(int client_socket)
+void *handle_client(void *arg)
 {
+  int client_socket = *((int *)arg);
+  free(arg);
   char buffer[BUFFERSIZE];
   int recv_size, msg_size;
 
@@ -78,5 +83,5 @@ void handle_client(int client_socket)
   }
 
   close(client_socket);
-  return;
+  return NULL;
 }
