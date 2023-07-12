@@ -19,13 +19,14 @@
 #define THPOOL_SIZE 10
 
 pthread_t th_pool[THPOOL_SIZE];
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
 
 void *handle_client(void *arg);
 int check(int exp, const char *msg);
-void *th_fun(void *arg);
+void *th_job(void *arg);
 
 int main(int argc, char **argv)
 {
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
   // Create thread pool
   for (int i = 0; i < THPOOL_SIZE; i++)
   {
-    pthread_create(&th_pool[i], NULL, th_fun, NULL);
+    pthread_create(&th_pool[i], NULL, th_job, NULL);
   }
 
   check((server_socket = socket(AF_INET, SOCK_STREAM, 0)), "Failed to create socket");
@@ -57,7 +58,9 @@ int main(int argc, char **argv)
     pthread_t thread;
     int *pclient = malloc(sizeof(int));
     *pclient = client_socket;
+    pthread_mutex_lock(&mutex);
     enqueue(pclient);
+    pthread_mutex_unlock(&mutex);
   }
 
   return 0;
@@ -73,13 +76,16 @@ int check(int exp, const char *msg)
   return exp;
 }
 
-void *th_fun(void *arg)
+void *th_job(void *arg)
 {
   while (1)
   {
+    pthread_mutex_lock(&mutex);
     int *pclient = dequeue();
+    pthread_mutex_unlock(&mutex);
     if (pclient != NULL)
     {
+      printf("Dequeued client\n");
       // we have a client
       handle_client(pclient);
     }
@@ -88,14 +94,16 @@ void *th_fun(void *arg)
 
 void *handle_client(void *arg)
 {
+  printf("Handling client\n");
   int client_socket = *((int *)arg);
   free(arg);
-  char buffer[BUFFERSIZE];
+  char raw_message[BUFFERSIZE];
+  memset(raw_message, 0, BUFFERSIZE);
   int recv_size, msg_size;
 
   while (1)
   {
-    recv_size = check(recv(client_socket, buffer, BUFFERSIZE, 0), "Recv failed");
+    recv_size = check(recv(client_socket, raw_message, BUFFERSIZE - 1, 0), "Recv failed");
     if (recv_size == 0)
     {
       printf("Client disconnected\n");
@@ -103,7 +111,7 @@ void *handle_client(void *arg)
     }
 
     msg_size = recv_size;
-    printf("Received: %s", buffer);
+    printf("Received: %s", raw_message);
   }
 
   close(client_socket);

@@ -1,11 +1,16 @@
 CC = gcc
+CFLAGS = -g
 LIBS = -pthread
+BINS = server
+OBJS = server.o queue.o
 
-gateway: server.o
-	$(CC) $(CFLAGS) $(LIBS) -g -o server server.o 
+all: $(BINS)
 
-server.o: server.c
-	$(CC) $(CFLAGS) -c server.c
+server: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
 
 clean:
-	rm -f server server.o 
+	rm -rf server *.o $(BINS)
