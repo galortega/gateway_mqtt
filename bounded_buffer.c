@@ -18,6 +18,10 @@ BoundedBuffer bounded_buffer_init()
 */
 void bounded_buffer_enqueue(char *message, BoundedBuffer *buffer)
 {
+  if (message == NULL)
+  {
+    return;
+  }
   SensorData data = create_sensor_data(message);
   sem_wait(&buffer->spaces);
   pthread_mutex_lock(&buffer->mutex);
