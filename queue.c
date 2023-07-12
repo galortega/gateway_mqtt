@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include "queue.h"
 
 node_t *head = NULL;
@@ -38,18 +37,13 @@ int *dequeue()
   else
   {
     int *client_socket = head->client_socket;
-    printf("Dequeueing client socket %d\n", *client_socket);
     node_t *temp = head;
-    printf("Freeing node\n");
     head = head->next;
-    printf("Freed node\n");
     if (head == NULL)
     {
-      printf("Head is NULL\n");
       tail = NULL;
     }
     free(temp);
-    printf("Returning client socket\n");
     return client_socket;
   }
 }

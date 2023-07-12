@@ -19,7 +19,7 @@
 #define THPOOL_SIZE 10
 
 pthread_t th_pool[THPOOL_SIZE];
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t th_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct sockaddr_in SA_IN;
 typedef struct sockaddr SA;
@@ -58,9 +58,9 @@ int main(int argc, char **argv)
     pthread_t thread;
     int *pclient = malloc(sizeof(int));
     *pclient = client_socket;
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&th_pool_mutex);
     enqueue(pclient);
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&th_pool_mutex);
   }
 
   return 0;
@@ -80,12 +80,11 @@ void *th_job(void *arg)
 {
   while (1)
   {
-    pthread_mutex_lock(&mutex);
+    pthread_mutex_lock(&th_pool_mutex);
     int *pclient = dequeue();
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&th_pool_mutex);
     if (pclient != NULL)
     {
-      printf("Dequeued client\n");
       // we have a client
       handle_client(pclient);
     }
@@ -94,7 +93,6 @@ void *th_job(void *arg)
 
 void *handle_client(void *arg)
 {
-  printf("Handling client\n");
   int client_socket = *((int *)arg);
   free(arg);
   char raw_message[BUFFERSIZE];
@@ -106,12 +104,11 @@ void *handle_client(void *arg)
     recv_size = check(recv(client_socket, raw_message, BUFFERSIZE - 1, 0), "Recv failed");
     if (recv_size == 0)
     {
-      printf("Client disconnected\n");
       break;
     }
 
     msg_size = recv_size;
-    printf("Received: %s", raw_message);
+    printf("Received by client at socket %d: %s\n", client_socket, raw_message);
   }
 
   close(client_socket);
