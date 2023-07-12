@@ -1,6 +1,9 @@
 #ifndef QUEUE_H_
 #define QUEUE_H_
 
+#include <stdlib.h>
+
+
 // This queue will contain the client sockets
 typedef struct node
 {
@@ -8,7 +11,7 @@ typedef struct node
   int *client_socket;
 } node_t;
 
-void enqueue(int *client_socket);
-int *dequeue();
+void thpool_add_job(int *client_socket);
+int *thpool_do_job();
 
 #endif // QUEUE_H_
