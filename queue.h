@@ -11,7 +11,7 @@ typedef struct node
   int *client_socket;
 } node_t;
 
-void thpool_add_job(int *client_socket);
-int *thpool_do_job();
+void thpool_enqueue_job(int *client_socket);
+int *thpool_dequeue_job();
 
 #endif // QUEUE_H_

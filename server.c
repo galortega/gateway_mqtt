@@ -28,7 +28,7 @@ typedef struct sockaddr SA;
 
 void *handle_client(void *arg);
 int check(int exp, const char *msg);
-void *thpool_add_to_pool(void *arg);
+void *thpool_add_thread_to_pool(void *arg);
 
 BoundedBuffer bounded_buffer;
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   // Create thread pool
   for (int i = 0; i < THPOOL_SIZE; i++)
   {
-    pthread_create(&th_pool[i], NULL, thpool_add_to_pool, NULL);
+    pthread_create(&th_pool[i], NULL, thpool_add_thread_to_pool, NULL);
   }
 
   check((server_socket = socket(AF_INET, SOCK_STREAM, 0)), "Failed to create socket");
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     int *pclient = malloc(sizeof(int));
     *pclient = client_socket;
     pthread_mutex_lock(&th_pool_mutex);
-    thpool_add_job(pclient);
+    thpool_enqueue_job(pclient);
     pthread_cond_signal(&th_pool_cond);
     pthread_mutex_unlock(&th_pool_mutex);
   }
@@ -86,16 +86,16 @@ int check(int exp, const char *msg)
   return exp;
 }
 
-void *thpool_add_to_pool(void *arg)
+void *thpool_add_thread_to_pool(void *arg)
 {
   while (1)
   {
     int *pclient;
     pthread_mutex_lock(&th_pool_mutex);
-    if ((pclient = thpool_do_job()) == NULL)
+    if ((pclient = thpool_dequeue_job()) == NULL)
     {
       pthread_cond_wait(&th_pool_cond, &th_pool_mutex);
-      pclient = thpool_do_job();
+      pclient = thpool_dequeue_job();
     }
     pthread_mutex_unlock(&th_pool_mutex);
     if (pclient != NULL)
