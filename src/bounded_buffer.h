@@ -21,25 +21,25 @@ typedef struct
   float temperature;
   float humidity;
   char *timestamp;
-} SensorData;
+} sensor_data_t;
 
 typedef struct
 {
-  SensorData *buffer;
+  sensor_data_t *buffer;
   int first;
   int last;
   int size;
   pthread_mutex_t mutex;
   sem_t spaces;
   sem_t items;
-} BoundedBuffer;
+} bounded_buffer_t;
 
-SensorData create_sensor_data(char *message);
-BoundedBuffer bounded_buffer_init();
-void bounded_buffer_enqueue(char *message, BoundedBuffer *bounded_buffer);
-void bounded_buffer_dequeue(BoundedBuffer *bounded_buffer);
-void bounded_buffer_destroy(BoundedBuffer *buffer);
-int bounded_buffer_size(BoundedBuffer *buffer);
+sensor_data_t create_sensor_data(char *message);
+bounded_buffer_t bounded_buffer_init();
+void bounded_buffer_enqueue(char *message, bounded_buffer_t *bounded_buffer);
+void bounded_buffer_dequeue(bounded_buffer_t *bounded_buffer);
+void bounded_buffer_destroy(bounded_buffer_t *buffer);
+int bounded_buffer_size(bounded_buffer_t *buffer);
 void *bounded_buffer_consume(void *arg);
 char *convert_time(time_t raw_time);
 

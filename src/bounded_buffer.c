@@ -2,10 +2,10 @@
 /*
  * Initialize the bounded buffer
  */
-BoundedBuffer bounded_buffer_init()
+bounded_buffer_t bounded_buffer_init()
 {
-  BoundedBuffer *buffer = (BoundedBuffer *)malloc(sizeof(BoundedBuffer));
-  buffer->buffer = (SensorData *)malloc(sizeof(SensorData) * BUFFER_CAPACITY);
+  bounded_buffer_t *buffer = (bounded_buffer_t *)malloc(sizeof(bounded_buffer_t));
+  buffer->buffer = (sensor_data_t *)malloc(sizeof(sensor_data_t) * BUFFER_CAPACITY);
   buffer->first = 0;
   buffer->last = 0;
   buffer->size = 0;
@@ -17,13 +17,13 @@ BoundedBuffer bounded_buffer_init()
 /*
  * Enqueue a message to the bounded buffer
  */
-void bounded_buffer_enqueue(char *message, BoundedBuffer *buffer)
+void bounded_buffer_enqueue(char *message, bounded_buffer_t *buffer)
 {
   if (message == NULL)
   {
     return;
   }
-  SensorData data = create_sensor_data(message);
+  sensor_data_t data = create_sensor_data(message);
   sem_wait(&buffer->spaces);
   pthread_mutex_lock(&buffer->mutex);
   buffer->buffer[buffer->last] = data;
@@ -41,19 +41,19 @@ void bounded_buffer_enqueue(char *message, BoundedBuffer *buffer)
 /*
  * Returns the size of the bounded buffer
  */
-int bounded_buffer_size(BoundedBuffer *buffer)
+int bounded_buffer_size(bounded_buffer_t *buffer)
 {
   return buffer->size;
 }
 /*
  * Dequeue a message from the bounded buffer
  */
-void bounded_buffer_dequeue(BoundedBuffer *buffer)
+void bounded_buffer_dequeue(bounded_buffer_t *buffer)
 {
   sem_wait(&buffer->items);
   pthread_mutex_lock(&buffer->mutex);
 
-  SensorData data = buffer->buffer[buffer->first];
+  sensor_data_t data = buffer->buffer[buffer->first];
   buffer->first = (buffer->first + 1) % BUFFER_CAPACITY;
   buffer->size--;
   // TODO: send to broker
@@ -65,7 +65,7 @@ void bounded_buffer_dequeue(BoundedBuffer *buffer)
 /*
  * Destroy the bounded buffer
  */
-void bounded_buffer_destroy(BoundedBuffer *buffer)
+void bounded_buffer_destroy(bounded_buffer_t *buffer)
 {
   pthread_mutex_destroy(&buffer->mutex);
   sem_destroy(&buffer->spaces);
@@ -78,7 +78,7 @@ void bounded_buffer_destroy(BoundedBuffer *buffer)
  */
 void *bounded_buffer_consume(void *arg)
 {
-  BoundedBuffer *buffer = (BoundedBuffer *)arg;
+  bounded_buffer_t *buffer = (bounded_buffer_t *)arg;
   while (1)
   {
     bounded_buffer_dequeue(buffer);
@@ -98,11 +98,11 @@ char *convert_time(time_t raw_time)
   return time_string;
 }
 /*
- * Create a SensorData struct from a raw message
+ * Create a sensor_data_t struct from a raw message
  */
-SensorData create_sensor_data(char *message)
+sensor_data_t create_sensor_data(char *message)
 {
-  SensorData sensor_data;
+  sensor_data_t sensor_data;
   char *token = strtok(message, ",");
   int i = 0;
   while (token != NULL)

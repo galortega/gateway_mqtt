@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -g
 LIBS = -pthread
 BINS = server
-OBJS = server.o queue.o bounded_buffer.o
+OBJS = server.o ../job_queue.o ../bounded_buffer.o
 
 all: $(BINS)
 

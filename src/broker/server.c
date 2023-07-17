@@ -10,8 +10,8 @@
 #include <stddef.h>
 #include <semaphore.h>
 #include <stdbool.h>
-#include "queue.h"
-#include "bounded_buffer.h"
+#include "../job_queue.h"
+#include "../bounded_buffer.h"
 
 #define SERVERPORT 8080
 #define BUFFERSIZE 4096
@@ -30,13 +30,15 @@ void *handle_client(void *arg);
 int check(int exp, const char *msg);
 void *thpool_add_thread_to_pool(void *arg);
 
-BoundedBuffer bounded_buffer;
+bounded_buffer_t bounded_buffer;
+job_queue_t job_queue;
 
 int main(int argc, char **argv)
 {
   int server_socket, client_socket, addr_size;
   SA_IN server_addr, client_addr;
 
+  job_queue = job_queue_init();
   bounded_buffer = bounded_buffer_init();
 
   // Create thread pool
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
     int *pclient = malloc(sizeof(int));
     *pclient = client_socket;
     pthread_mutex_lock(&th_pool_mutex);
-    thpool_enqueue_job(pclient);
+    thpool_enqueue_job(pclient, &job_queue);
     pthread_cond_signal(&th_pool_cond);
     pthread_mutex_unlock(&th_pool_mutex);
   }
@@ -92,10 +94,10 @@ void *thpool_add_thread_to_pool(void *arg)
   {
     int *pclient;
     pthread_mutex_lock(&th_pool_mutex);
-    if ((pclient = thpool_dequeue_job()) == NULL)
+    if ((pclient = thpool_dequeue_job(&job_queue)) == NULL)
     {
       pthread_cond_wait(&th_pool_cond, &th_pool_mutex);
-      pclient = thpool_dequeue_job();
+      pclient = thpool_dequeue_job(&job_queue);
     }
     pthread_mutex_unlock(&th_pool_mutex);
     if (pclient != NULL)

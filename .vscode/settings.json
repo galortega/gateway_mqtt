@@ -2,6 +2,7 @@
   "files.associations": {
     "*.embeddedhtml": "html",
     "stdio.h": "c",
-    "bounded_buffer.h": "c"
+    "bounded_buffer.h": "c",
+    "job_queue.h": "c"
   }
 }

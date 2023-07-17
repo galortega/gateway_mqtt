@@ -1,13 +1,24 @@
-#include "queue.h"
+#include "job_queue.h"
 
-node_t *head = NULL;
-node_t *tail = NULL;
+job_queue_t job_queue_init()
+{
+  job_queue_t *queue = malloc(sizeof(job_queue_t));
+  node_t *head = malloc(sizeof(node_t));
+  node_t *tail = malloc(sizeof(node_t));
+  head->next = NULL;
+  tail->next = NULL;
+  queue->head = head;
+  queue->tail = tail;
+  return *queue;
+}
 
 /*
  * Enqueue a client socket to the queue
  */
-void thpool_enqueue_job(int *client_socket)
+void thpool_enqueue_job(int *client_socket, job_queue_t *queue)
 {
+  node_t *head = queue->head;
+  node_t *tail = queue->tail;
   node_t *newnode = malloc(sizeof(node_t));
   newnode->client_socket = client_socket;
   newnode->next = NULL;
@@ -27,8 +38,10 @@ void thpool_enqueue_job(int *client_socket)
  * Dequeue a client socket from the queue and free the memory
  * Returns the pointer to the client socket, or NULL if the queue is empty
  */
-int *thpool_dequeue_job()
+int *thpool_dequeue_job(job_queue_t *queue)
 {
+  node_t *head = queue->head;
+  node_t *tail = queue->tail;
   if (head == NULL)
   {
     return NULL;
