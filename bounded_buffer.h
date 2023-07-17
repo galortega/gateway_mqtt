@@ -28,6 +28,7 @@ typedef struct
   SensorData *buffer;
   int first;
   int last;
+  int size;
   pthread_mutex_t mutex;
   sem_t spaces;
   sem_t items;
