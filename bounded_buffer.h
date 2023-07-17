@@ -42,5 +42,8 @@ void bounded_buffer_destroy(BoundedBuffer *buffer);
 int bounded_buffer_size(BoundedBuffer *buffer);
 void *bounded_buffer_consume(void *arg);
 char *convert_time(time_t raw_time);
+int check(int exp, const char *msg);
+size_t serialize_sensor_data(SensorData *data, char *buffer);
+void send_to_broker(char *buffer, size_t size);
 
 #endif // BOUNDED_BUFFER_H_

@@ -1,4 +1,11 @@
 #include "bounded_buffer.h"
+
+#define BROKER_IP "127.0.0.1"
+#define BROKER_PORT 8081
+#define SOCKETERROR (-1)
+
+typedef struct sockaddr_in SA_IN;
+typedef struct sockaddr SA;
 /*
  * Initialize the bounded buffer
  */
@@ -56,9 +63,9 @@ void bounded_buffer_dequeue(BoundedBuffer *buffer)
   SensorData data = buffer->buffer[buffer->first];
   buffer->first = (buffer->first + 1) % BUFFER_CAPACITY;
   buffer->size--;
-  // TODO: send to broker
-  printf("Dequeued message from node #%d: %.2f, %.2f, %s\n", data.identifier, data.temperature, data.humidity, data.timestamp);
-
+  char *serialized_buffer = malloc(sizeof(char) * 1024);
+  size_t serialized_size = serialize_sensor_data(&data, serialized_buffer);
+  send_to_broker(serialized_buffer, serialized_size);
   pthread_mutex_unlock(&buffer->mutex);
   sem_post(&buffer->spaces);
 }
@@ -128,4 +135,52 @@ SensorData create_sensor_data(char *message)
     i++;
   }
   return sensor_data;
+}
+
+// Serialization function
+size_t serialize_sensor_data(SensorData *data, char *buffer)
+{
+  char *identifier = malloc(sizeof(int));
+  sprintf(identifier, "%d", data->identifier);
+  char *temperature = malloc(sizeof(float));
+  sprintf(temperature, "%.2f", data->temperature);
+  char *humidity = malloc(sizeof(float));
+  sprintf(humidity, "%.2f", data->humidity);
+  char *timestamp = malloc(sizeof(char) * 9);
+  sprintf(timestamp, "%s", data->timestamp);
+  printf("Serialized message: %s,%s,%s,%s\n", identifier, temperature, humidity, timestamp);
+  size_t size = sizeof(int) + sizeof(float) + sizeof(float) + sizeof(char) * 9;
+  sprintf(buffer, "%s,%s,%s,%s", identifier, temperature, humidity, timestamp);
+  return size;
+}
+
+// Send to broker function
+void send_to_broker(char *buffer, size_t size)
+{
+  int client_socket;
+  SA_IN server_addr;
+
+  check((client_socket = socket(AF_INET, SOCK_STREAM, 0)), "Failed to create socket");
+
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = inet_addr(BROKER_IP);
+  server_addr.sin_port = htons(BROKER_PORT);
+  printf("Sending to broker at %s:%d\n", BROKER_IP, BROKER_PORT);
+  printf("Message: %s\n", buffer);
+  check(connect(client_socket, (SA *)&server_addr, sizeof(server_addr)), "Broker connection failed");
+
+  check(send(client_socket, buffer, size, 0), "Send failed");
+  
+  free(buffer);
+  close(client_socket);
+}
+
+int check(int exp, const char *msg)
+{
+  if (exp == SOCKETERROR)
+  {
+    perror(msg);
+    exit(1);
+  }
+  return exp;
 }

@@ -76,16 +76,6 @@ int main(int argc, char **argv)
   return 0;
 }
 
-int check(int exp, const char *msg)
-{
-  if (exp == SOCKETERROR)
-  {
-    perror(msg);
-    exit(1);
-  }
-  return exp;
-}
-
 void *thpool_add_thread_to_pool(void *arg)
 {
   while (1)
