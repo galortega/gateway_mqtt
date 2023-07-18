@@ -31,6 +31,11 @@ void bounded_buffer_enqueue(char *message, BoundedBuffer *buffer)
     return;
   }
   SensorData data = create_sensor_data(message);
+  // check if the data is valid
+  if (data.identifier < 0 || data.temperature < -40 || data.temperature > 80 || data.humidity < 0 || data.humidity > 100 || data.timestamp == NULL)
+  {
+    return;
+  }
   sem_wait(&buffer->spaces);
   pthread_mutex_lock(&buffer->mutex);
   buffer->buffer[buffer->last] = data;
@@ -170,7 +175,7 @@ void send_to_broker(char *buffer, size_t size)
   check(connect(client_socket, (SA *)&server_addr, sizeof(server_addr)), "Broker connection failed");
 
   check(send(client_socket, buffer, size, 0), "Send failed");
-  
+
   free(buffer);
   close(client_socket);
 }

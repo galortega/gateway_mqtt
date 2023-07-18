@@ -113,8 +113,8 @@ void *handle_client(void *arg)
     }
 
     msg_size = recv_size;
-    printf("Received by client at socket %d: %s\n", client_socket, raw_message);
     bounded_buffer_enqueue(raw_message, &bounded_buffer);
+    printf("Received by client at socket %d: %s\n", client_socket, raw_message);
   }
 
   close(client_socket);
